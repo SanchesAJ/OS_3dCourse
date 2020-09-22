@@ -6,6 +6,7 @@
 #define ERROR_TREAD_CREATE 1
 #define ERROR_TREAD_CANCEL 2
 #define ALL_RIGHT 0
+#define NOT_STOPED 1
 
 void printTreadError(int errCode, char * comment){
 	char *errorLine = strerror(errCode);
@@ -25,7 +26,10 @@ void *work(void *arg) {
 	//Обработка ошибок не нужна, функции не могут вернуть код ошибки.
 	pthread_cleanup_push(&shut,NULL)
 	printf("I'm a child!\n");
-	sleep(5);
+	while (NOT_STOPED){
+		pthread_testcancel();
+        printf("I'm a child in cycle!\n");
+    }
 	pthread_cleanup_pop(0);
 	printf("I'm a child, i was't canceld!\n");
 

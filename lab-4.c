@@ -17,7 +17,7 @@ void printTreadError(int errCode, char * comment){
 void *work(void *arg) {
 	printf("I'm a child!\n");
 	
-	 while (NOT_STOPED){
+	while (NOT_STOPED){
 		pthread_testcancel();
         printf("I'm a child in cycle!\n");
     }
