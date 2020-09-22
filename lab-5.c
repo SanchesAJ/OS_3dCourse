@@ -7,7 +7,7 @@
 #define ERROR_TREAD_CANCEL 2
 #define ALL_RIGHT 0
 #define NOT_STOPED 1
-
+#define DONT_CALL_HANDLERS 0
 void printTreadError(int errCode, char * comment){
 	char *errorLine = strerror(errCode);
 	fprintf(stderr,"%s: %s\n",comment, errorLine);
@@ -30,7 +30,7 @@ void *work(void *arg) {
 		pthread_testcancel();
         printf("I'm a child in cycle!\n");
     }
-	pthread_cleanup_pop(0);
+	pthread_cleanup_pop(DONT_CALL_HANDLERS);
 	printf("I'm a child, i was't canceld!\n");
 
 	pthread_exit(NULL);
