@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
-void *routine(void *arg);
 
 int N = 0;
 int alive;
@@ -77,7 +76,7 @@ void *work(void *arg) {
                         n = 0;
                 }
                 pthread_mutex_unlock(&mutex);
-                if (pthread_self() == 3) sleep(1);
+                
         }
         pthread_mutex_lock(&mutex);
         --alive;
