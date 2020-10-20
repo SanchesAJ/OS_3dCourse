@@ -85,8 +85,6 @@ double calcPi(pthread_t *thread, data *results, int N, int ITER){
                 return ALLOCATOR_ERROR;
         }
 
-        double PI = calcPi(thread, results,N,ITER);
-
        
 	for (int i = 0; i < N; ++i) {
                 results[i].res = 0;
@@ -121,7 +119,7 @@ int main(int argc, char **argv) {
         int ITER = 0;
         int i = 0;
         int error;
-
+		double PI = 0;
 		
 		error = checkArgs(argc, argv);
 		if (error != ALL_RIGHT){
