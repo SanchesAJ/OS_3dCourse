@@ -8,7 +8,6 @@
 int N = 0;
 int alive;
 int ITER = 0;
-pthread_barrier_t barrier;
 int inconst = 0;
 pthread_mutex_t mutex;
 pthread_cond_t cond;
@@ -29,6 +28,30 @@ pthread_cond_t cond;
 #define ALL_RIGHT 0
 #define COUNT_OF_TREADS 4
 
+int checkArgs(int argc, char **argv) {
+	
+	if (argc < 3) {
+        perror("Too few arguments");
+        return INCORRECT_ARGS;
+    }
+		
+		
+	int N = atoi(argv[1]);
+    int ITER = atoi(argv[2]);
+    if (ITER <= 0) {
+        perror("Incorrect number of iterations");
+        return INCORRECT_ARGS;
+    }
+	
+	 
+	if (N < 1 || _SC_THREAD_THREADS_MAX < N) {
+		perror("invalid number of threads");
+		return INCORRECT_ARGS;
+	}
+	
+	return ALL_RIGHT;
+}
+
 
 void printTreadError(int errCode, char * comment){
         char *errorLine = strerror(errCode);
@@ -42,7 +65,6 @@ typedef struct data {
         long long int top;
 } data;
 
-data *results = NULL;
 int flag = 1;
 int n = 0;
 
@@ -85,32 +107,10 @@ void *work(void *arg) {
         pthread_exit(NULL);
 }
 
-
-int main(int argc, char **argv) {
-        pthread_t *thread = NULL;
-
-        double PI = 0;
-        int i = 0;
-        if (argc < 2) {
-                perror("Too few arguments");
-                return 1;
-        }
-        int error;
-        N = atoi(argv[1]);
-        ITER = atoi(argv[2]);
-
-        if (ITER <= 0) {
-                perror("Incorrect number of iterations");
-                return INCORRECT_ARGS;
-        }
-
-        alive = N;
-        if (N <= 0) {
-                perror("Incorrect number of threads");
-                return 1;
-        }
-
-
+double calcPi(pthread_t *thread, data *results){
+	int error;
+	double PI = 0;
+	int i = 0;
 
         thread = (pthread_t*)malloc(sizeof(pthread_t)*N);
         if (thread== NULL) {
@@ -124,16 +124,13 @@ int main(int argc, char **argv) {
                 return ALLOCATOR_ERROR;
         }
 
-        error = pthread_barrier_init(&barrier, NULL, N);
-        if (error!=ALL_RIGHT) {
-                printTreadError(error,"couldn't setup barrier");
-                return ERROR_BARRIER_CREATE;
-        }
+      
         error = pthread_mutex_init(&mutex, NULL);
         if (error!=ALL_RIGHT) {
                 printTreadError(error,"couldn't create mutex");
                 return ERROR_MUTEX_CREATE;
         }
+		
         error = pthread_cond_init(&cond, NULL);
         if (error!=ALL_RIGHT) {
                 printTreadError(error,"couldn't create condition");
@@ -159,11 +156,7 @@ int main(int argc, char **argv) {
                 PI += results[i].res;
         }
 
-        error = pthread_barrier_destroy(&barrier);
-        if (error!=ALL_RIGHT) {
-                printTreadError(error,"couldn't destroy barrier");
-                return ERROR_BARRIER_DESTROY;
-        }
+      
         error = pthread_mutex_destroy(&mutex);
         if (error!=ALL_RIGHT) {
                 printTreadError(error,"couldn't destroy mutex");
@@ -176,9 +169,31 @@ int main(int argc, char **argv) {
         }
 
         free(results);
-        PI *= 4;
+		PI *= 4;
+		return PI;
+}
+
+int main(int argc, char **argv) {
+        pthread_t *thread = NULL;
+		data *results = NULL;
+        double PI = 0;
+		int error;
+		
+		error = checkArgs(argc, argv);
+		if (error != ALL_RIGHT){
+			return INCORRECT_ARGS;
+		}
+        N = atoi(argv[1]);
+        ITER = atoi(argv[2]);
+
+        alive = N;
+		PI = calcPi(thread, results);
+		
+        if(PI < ALL_RIGHT){
+			return PI;
+		}
         printf("PI = %.16lf\n",PI);
-        fflush(0);
+        
         pthread_exit(NULL);
 }
 
