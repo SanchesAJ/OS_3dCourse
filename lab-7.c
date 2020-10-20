@@ -33,7 +33,7 @@ typedef struct data {
 int checkArgs(int argc, char **argv) {
 	
 	if (argc < 3) {
-        perror("Too few arguments");
+        perror("Too few arguments\n need: num of thread, count of iteration ");
         return INCORRECT_ARGS;
     }
 		
@@ -41,13 +41,13 @@ int checkArgs(int argc, char **argv) {
 	int N = atoi(argv[1]);
     int ITER = atoi(argv[2]);
     if (ITER <= 0) {
-        perror("Incorrect number of iterations");
+        perror("Incorrect number of iterations: need >0");
         return INCORRECT_ARGS;
     }
 	
 	 
 	if (N < 1 || _SC_THREAD_THREADS_MAX < N) {
-		perror("invalid number of threads");
+		perror("invalid number of threads, need 0<N<574");
 		return INCORRECT_ARGS;
 	}
 	
@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
         if(PI < ALL_RIGHT){
 			return ERROR_PI_CALC;
 		}
-        printf("PI = %.16lf\n",PI);
+        printf("PI = %.24lf\n",PI);
         pthread_exit(NULL);
 }
 
