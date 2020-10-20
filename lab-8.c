@@ -12,7 +12,7 @@ int inconst = 0;
 pthread_mutex_t mutex;
 pthread_cond_t cond;
 
-
+#define ERROR_PI_CALC -1
 #define INCORRECT_ARGS -3
 #define ALLOCATOR_ERROR -4
 #define ERROR_TREAD_CREATE -1
@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 		PI = calcPi(thread, results);
 		
         if(PI < ALL_RIGHT){
-			return PI;
+			return ERROR_PI_CALC;
 		}
         printf("PI = %.16lf\n",PI);
         
