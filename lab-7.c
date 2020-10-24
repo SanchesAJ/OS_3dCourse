@@ -84,6 +84,7 @@ double calcPi(pthread_t *thread, data *results, int N, int ITER){
         results = (data*)malloc(sizeof(data)*N);
         if (results == NULL) {
                 perror("couldn't allocate memory for data struct");
+				free(thread);
                 return ALLOCATOR_ERROR;
         }
 
@@ -96,20 +97,25 @@ double calcPi(pthread_t *thread, data *results, int N, int ITER){
                 error = pthread_create(&(thread[i]), NULL, &work, results + i);
                 if (error!=ALL_RIGHT) {
                         printTreadError(error,"couldn't create thread");
+						free(results);
+						free(thread);
                         return ERROR_TREAD_CREATE;
                 }
         }
 
-        for (int i = 0; i < N; ++i) {
+       for (int i = 0; i < N; ++i) {
                 error = pthread_join(thread[i], NULL);
                 if (error != ALL_RIGHT) {
                         perror("couldn't join threads");
+						free(results);
+						free(thread);
                         return ERROR_TREAD_JOIN;
                 }
                 PI += results[i].res;
         }
 		PI *= 4;
 		free(results);
+		free(thread);
 		return PI;
 }
 

@@ -73,6 +73,8 @@ void finalize(int signo) {
         flag = 0;
 }
 
+//Мутексами мы закрываем 2 разделяемые переменные  - N и alive. 
+//Ожидание по условию необходимо для синхронизации потоков по количеству итераций.
 void *work(void *arg) {
         data *res = (data *)arg;
         long long int i = 0;
@@ -82,25 +84,35 @@ void *work(void *arg) {
         int br = 0;
         double a = 1; double b = 1;
         res->top = 0;
+		//Основной цикл вычислений
         while (flag) {
+			//Выполняем определённое количество итераций(задаётся в аргументах)
                 for (i = 0; i < ITER; ++i) {
                         a = (2*2*j + 1);
                         b = (2*(2*j+1) + 1);
                         res->res += (1/(a)) - (1/(b));
                         j += N;
                 }
+				//Проверка команды на выход
                 if (!flag) break;
+				
+				//Блокируем мутекс, увеличиваем счётчик потоков, выполнивших свою итерацию
                 pthread_mutex_lock(&mutex);
                 ++n;
                 if (n < alive) {
+					//Если есть ещё не отработавшие итерацию потоки - атомарно освобождаем мутекс (после этого другой поток тоже может его взять, пока мы не проснёмся), 
+					//сами блокируемся по переменной. 
                         pthread_cond_wait(&cond,&mutex);
                 } else {
+					//Если мы - последний поток на этой итерации, то даём команду проснуться всем потокам. После чего они начнут по очереди(важно) просыпаться,
+					//освобождая захваченный ранее мутекс
                         pthread_cond_broadcast(&cond);
                         n = 0;
                 }
                 pthread_mutex_unlock(&mutex);
                 
         }
+		//Как только сигнал был дан, уменьшаем количество живых потоков на 1. Бродкаст разбудит тех, кто мог остаться заблокированным
         pthread_mutex_lock(&mutex);
         --alive;
         pthread_cond_broadcast(&cond);
@@ -121,6 +133,7 @@ double calcPi(pthread_t *thread, data *results){
 
         results = (data*)malloc(sizeof(data)*N);
         if (results == NULL) {
+				free(thread);
                 perror("couldn't allocate memory");
                 return ALLOCATOR_ERROR;
         }
@@ -128,12 +141,16 @@ double calcPi(pthread_t *thread, data *results){
       
         error = pthread_mutex_init(&mutex, NULL);
         if (error!=ALL_RIGHT) {
+				free(results);
+				free(thread);
                 printTreadError(error,"couldn't create mutex");
                 return ERROR_MUTEX_CREATE;
         }
 		
         error = pthread_cond_init(&cond, NULL);
         if (error!=ALL_RIGHT) {
+				free(results);
+				free(thread);
                 printTreadError(error,"couldn't create condition");
                 return ERROR_CONDITION_CREATE;
         }
@@ -144,18 +161,26 @@ double calcPi(pthread_t *thread, data *results){
                 error = pthread_create(&(thread[i]), NULL, &work, results + i);
                 if (error!=ALL_RIGHT) {
                         printTreadError(error,"couldn't create thread");
+						free(results);
+						free(thread);
                         return ERROR_TREAD_CREATE;
                 }
         }
+		
+		//Всё готово к вычислениям. Устанавливаем обработчик сигнала
         signal(SIGINT, finalize);
         for (i = 0; i < N; ++i) {
                 error = pthread_join(thread[i], NULL);
                 if (error != ALL_RIGHT) {
                         perror("couldn't join threads");
+						free(results);
+						free(thread);
                         return ERROR_TREAD_JOIN;
                 }
                 PI += results[i].res;
         }
+		free(results);
+		free(thread);
 
       
         error = pthread_mutex_destroy(&mutex);
@@ -169,7 +194,6 @@ double calcPi(pthread_t *thread, data *results){
                 return ERROR_CONDITION_DESTROY;
         }
 
-        free(results);
 		PI *= 4;
 		return PI;
 }
@@ -193,7 +217,7 @@ int main(int argc, char **argv) {
         if(PI < ALL_RIGHT){
 			return ERROR_PI_CALC;
 		}
-        printf("PI = %.16lf\n",PI);
+        printf("PI = %.24lf\n",PI);
         
         pthread_exit(NULL);
 }
