@@ -106,16 +106,15 @@ void *work(void *arg) {
 			exit(ERROR_PI_CALC);
 		}
 		++finishedThreads;
-		if (finishedThreads < alive) {
-
+		while(finishedThreads < alive) {
 			error = pthread_cond_wait(&cond, &mutex);
 			if (error != ALL_RIGHT) {
 				printTreadError(error, "couldn't block by cond");
 				exit(ERROR_PI_CALC);
 			}
 		}
-		else {
-
+		//арьереы СЮДА!
+		if(finishedThreads == alive) {
 			error = pthread_cond_broadcast(&cond);
 			if (error != ALL_RIGHT) {
 				printTreadError(error, "couldn't make broadcast");
@@ -123,6 +122,7 @@ void *work(void *arg) {
 			}
 			finishedThreads = 0;
 		}
+		
 		error = pthread_mutex_unlock(&mutex);
 
 		if (error != ALL_RIGHT) {
