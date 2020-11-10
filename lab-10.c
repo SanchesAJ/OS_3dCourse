@@ -60,7 +60,7 @@ void *printText(void *arg) {
 		Для печати строки, потоку нужно взять мутекс,мутекс, которым он не владеет на текущий момент. 
 		Как только строка напечатана, поток освобождает мутекс, которым владел до того, как взял второй. Обеспечивается такой порядок действий переменной t
 		Таким образом, мы используем 3 мутекса, на каждой итерации цикла for передавая один из них. 
-		(задавая промежуточное состояние, отсутствие которого и приведит к дедлоку для 2 мутексов.) 
+		(задавая промежуточное состояние, отсутствие которого и приводит к дедлоку для 2 мутексов.) 
 		*/
         code = pthread_mutex_lock(&mt[(t + 1) % 3]);
         if (code != ALL_RIGHT)
@@ -78,11 +78,11 @@ void *printText(void *arg) {
     pthread_exit(NULL);
 }
 
-int main(int argC, char **argV) {
-    int code;
-    pthread_t thread;
-    pthread_mutexattr_t mutattr;
 
+int  initResorces( pthread_t *thread){
+	pthread_mutexattr_t mutattr;
+
+	int code;
 	//Инициализация атрибута мьютекса
     code = pthread_mutexattr_init(&mutattr);
     if (code != ALL_RIGHT) {
@@ -114,7 +114,33 @@ int main(int argC, char **argV) {
         printTreadError(code, "mutex attr destroy error");
         return ERROR_MUTEX_ARG;
     }
+	
+	return ALL_RIGHT;
+}
 
+int destroyResorces(){
+	//Разрушаем не нужные мутксы.
+    for (int i = 0; i < 3; ++i) {
+        int code = pthread_mutex_destroy(&mt[i]);
+        if (code != ALL_RIGHT) {
+            printTreadError(code, "mutex destroy error");
+            return ERROR_MUTEX_DESTROY;
+        }
+    }
+	
+	return ALL_RIGHT;
+}
+
+int main(int argC, char **argV) {
+    int code;
+    pthread_t thread;
+    
+	code = initResorces(thread);
+	if (code != ALL_RIGHT) {
+        printTreadError(code, "create init resorces");
+        return code;
+    }
+	
 	//Запускаем дочерний поток
 	//Аргумент - номер запускаемого потока. pthread_self не гарантирует соблюдение номеров
     code = pthread_create(&thread, NULL, printText, (void *)1);
@@ -122,7 +148,6 @@ int main(int argC, char **argV) {
         printTreadError(code, "create thread error");
         return ERROR_TREAD_CREATE;
     }
-
 	//Холостой цикл ожидания, пока дочерний поток не будет готов к исполнению.  
     while (!locked1) {
 		//Данная функция заставляет поток откзаться от выделенного процессорного времени,
@@ -135,7 +160,6 @@ int main(int argC, char **argV) {
 	//Аргумент - номер запускаемого потока. pthread_self не гарантирует соблюдение номеров
     printText((void *)0);
 
-
 	//Ожидание дочерней(в основном для отчистки)
     code = pthread_join(thread, NULL);
     if (code != ALL_RIGHT) {
@@ -143,13 +167,11 @@ int main(int argC, char **argV) {
         return ERROR_TREAD_JOIN;
     }
 
-	//Разрушаем не нужные мутксы.
-    for (int i = 0; i < 3; ++i) {
-        code = pthread_mutex_destroy(&mt[i]);
-        if (code != ALL_RIGHT) {
-            printTreadError(code, "mutex destroy error");
-            return ERROR_MUTEX_DESTROY;
-        }
+	code = destroyResorces();
+	if (code != ALL_RIGHT) {
+        printTreadError(code, "create destroy resorces");
+        return code;
     }
+	
     pthread_exit(NULL);
 }
