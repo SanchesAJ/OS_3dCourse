@@ -74,7 +74,11 @@ void *printText(void *arg) {
             printTreadError(code, "mutex unlock error");
 
     }
-
+	
+	code = pthread_mutex_unlock(&mt[id]);
+	if (code != ALL_RIGHT)
+            printTreadError(code, "mutex unlock error");
+		
     pthread_exit(NULL);
 }
 

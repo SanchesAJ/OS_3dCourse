@@ -45,13 +45,17 @@ void printTreadError(int errCode, char * comment){
  только  при наличии свободных вилок. Официант смотри количество свободных вилок, при малом их количестве - засыпает. 
  Соответственно просыпается он по бродкасту на cond.  Предикат - наличие 2 свободных вилок. 
 */
+
 void waiter() {
+	
 	while (forks_taken >= PHILO - 1) {
 		pthread_mutex_lock(&waiter_mutex);
 		pthread_cond_wait(&waiter_cond, &waiter_mutex);
 		pthread_mutex_unlock(&waiter_mutex);
 	}
+	
 }
+
 int food_on_table () {
 	static int food = FOOD;
 	int myfood;
@@ -77,7 +81,7 @@ void get_fork (int phil, int fork, char *hand) {
 
 void down_forks (int f1, int f2) {
 	//Уменьшаем количество взятых вилок - отпускаем 2 штуки.
-	//
+
 	pthread_mutex_lock (&forks_taken_mutex);
 	--forks_taken; --forks_taken;
 	pthread_mutex_unlock (&forks_taken_mutex);
