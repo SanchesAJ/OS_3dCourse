@@ -21,25 +21,25 @@ void printTreadError(int errCode, char * comment) {
 sem_t semaphore1;
 sem_t semaphore2;
 
-typedef struct Context{
-    sem_t *sem_my;
+typedef struct Context {
+	sem_t *sem_my;
 	sem_t *sem_prt;
 	int msg;
 } Context;
 
 
 void *childText(void *arg) {
-	
+
 	int error;
-	Context *numTread = (Context*) arg;
+	Context *numTread = (Context*)arg;
 	for (int i = 0; i < 10; i++) {
 		error = sem_wait(numTread->sem_my);
 		if (error != ALL_RIGHT) {
 			printTreadError(error, "error semaphore wait");
 			exit(ERROR_SEMAPHORE_POST);
 		}
-		
-		printf("Thread %d : %d\n",numTread->msg, i + 1);
+
+		printf("Thread %d : %d\n", numTread->msg, i + 1);
 
 		error = sem_post(numTread->sem_prt);
 		if (error != ALL_RIGHT) {
@@ -83,13 +83,13 @@ int destroy_sems() {
 	return ALL_RIGHT;
 }
 
-int initContext(Context *cntx, sem_t *one, sem_t *two, int mess){
+int initContext(Context *cntx, sem_t *one, sem_t *two, int mess) {
 
-		cntx->sem_my = one;
-		cntx->sem_prt = two;
-		cntx->msg  = mess;
+	cntx->sem_my = one;
+	cntx->sem_prt = two;
+	cntx->msg = mess;
 
-    return ALL_RIGHT;
+	return ALL_RIGHT;
 }
 
 int main() {
@@ -100,14 +100,14 @@ int main() {
 	if (error != ALL_RIGHT) {
 		return ERROR_SEMAPHORE_INIT;
 	}
-	
+
 	Context cntx1;
-    error = initContext(&cntx1, &semaphore1, &semaphore2, 1);
-	
+	error = initContext(&cntx1, &semaphore1, &semaphore2, 1);
+
 	Context cntx2;
-    error = initContext(&cntx2, &semaphore2, &semaphore1, 2);
-	
-	
+	error = initContext(&cntx2, &semaphore2, &semaphore1, 2);
+
+
 
 	error = pthread_create(&thread, NULL, childText, (void*)(&cntx1));
 	if (error != ALL_RIGHT) {
@@ -118,10 +118,10 @@ int main() {
 
 	error = pthread_join(thread, NULL);
 	if (error != ALL_RIGHT) {
-        printTreadError(error, "join thread error");
+		printTreadError(error, "join thread error");
 		return ERROR_TREAD_JOIN;
-    }
-	
+	}
+
 	error = destroy_sems();
 	if (error != ALL_RIGHT) {
 		return ERROR_SEMAPHORE_DESTROY;
