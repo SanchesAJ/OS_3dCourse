@@ -21,18 +21,27 @@ void printTreadError(int errCode, char * comment) {
 sem_t semaphore1;
 sem_t semaphore2;
 
+typedef struct Context{
+    sem_t *sem_my;
+	sem_t *sem_prt;
+	int msg;
+} Context;
+
 
 void *childText(void *arg) {
+	
 	int error;
+	Context *numTread = (Context*) arg;
 	for (int i = 0; i < 10; i++) {
-		error = sem_wait(&semaphore2);
+		error = sem_wait(numTread->sem_my);
 		if (error != ALL_RIGHT) {
 			printTreadError(error, "error semaphore wait");
 			exit(ERROR_SEMAPHORE_POST);
 		}
-		printf("Thread 1: string %d\n", i + 1);
+		
+		printf("Thread %d : %d\n",numTread->msg, i + 1);
 
-		error = sem_post(&semaphore1);
+		error = sem_post(numTread->sem_prt);
 		if (error != ALL_RIGHT) {
 			printTreadError(error, "error semaphore post");
 			exit(ERROR_SEMAPHORE_WAIT);
@@ -42,23 +51,6 @@ void *childText(void *arg) {
 
 }
 
-void parentText() {
-	int error;
-	for (int i = 0; i < 10; i++) {
-		error = sem_wait(&semaphore1);
-		if (error != ALL_RIGHT) {
-			printTreadError(error, "error semaphore wait");
-			exit(ERROR_SEMAPHORE_POST);
-		}
-		printf("Thread 0: string %d\n", i + 1);
-		error = sem_post(&semaphore2);
-		if (error != ALL_RIGHT) {
-			printTreadError(error, "error semaphore post");
-			exit(ERROR_SEMAPHORE_WAIT);
-		}
-	}
-
-}
 
 
 int init_sems() {
@@ -91,6 +83,15 @@ int destroy_sems() {
 	return ALL_RIGHT;
 }
 
+int initContext(Context *cntx, sem_t *one, sem_t *two, int mess){
+
+		cntx->sem_my = one;
+		cntx->sem_prt = two;
+		cntx->msg  = mess;
+
+    return ALL_RIGHT;
+}
+
 int main() {
 	pthread_t thread;
 	int error;
@@ -99,13 +100,21 @@ int main() {
 	if (error != ALL_RIGHT) {
 		return ERROR_SEMAPHORE_INIT;
 	}
+	
+	Context cntx1;
+    error = initContext(&cntx1, &semaphore1, &semaphore2, 1);
+	
+	Context cntx2;
+    error = initContext(&cntx2, &semaphore2, &semaphore1, 2);
+	
+	
 
-	error = pthread_create(&thread, NULL, &childText, NULL);
+	error = pthread_create(&thread, NULL, childText, (void*)(&cntx1));
 	if (error != ALL_RIGHT) {
 		printTreadError(error, "create thread error");
 		return ERROR_TREAD_CREATE;
 	}
-	parentText();
+	childText((void*)(&cntx2));
 
 	error = pthread_join(thread, NULL);
 	if (error != ALL_RIGHT) {
@@ -120,3 +129,4 @@ int main() {
 
 	pthread_exit(NULL);
 }
+
